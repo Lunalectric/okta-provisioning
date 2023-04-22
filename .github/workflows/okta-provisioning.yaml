@@ -1,13 +1,11 @@
 name: Okta Provisioning
 on:
-  pull_request:
-    paths:
-      - "terraform/*"
+  push:
 
 env:
-    TF_VAR_api_token: "luna-gcs-edge-98604"
-    TF_VAR_base_url: "98604"
-    TF_VAR_org_name: "lunalectric"
+    TF_VAR_api_token: ${{ secrets.OKTA_API_TOKEN }}
+    TF_VAR_base_url: ${{ secrets.OKTA_BASE_URL }}
+    TF_VAR_org_name: ${{ secrets.OKTA_ORG_NAME }}
     MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
 
 jobs:
