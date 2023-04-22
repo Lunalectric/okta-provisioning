@@ -9,8 +9,8 @@ env:
     MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
 
 jobs:
-  terraform-pre-plan-tests:
-    name: "Terraform (pre-plan)"
+  terraform-pre-plan-validation:
+    name: "Terraform validate (pre-plan)"
     runs-on: ubuntu-latest
     steps:
     - uses: 'actions/checkout@v3'
@@ -38,8 +38,10 @@ jobs:
       run: terraform validate -no-color
 
   cnspec-scan-hcl:
+    name: "Terraform scan (pre-plan)"
     runs-on: ubuntu-latest
     container: mondoo/cnspec:latest
+    needs: terraform-pre-plan-validation 
     
     steps:
       - name: Check out repository code
@@ -49,4 +51,4 @@ jobs:
         run: |
           cnspec version
           cnspec status
-          cnspec scan local --asset-name "foo"
+          DEBUG=1 cnspec scan okta --organization dev-81307026.okta.com --token ${{ secrets.OKTA_API_TOKEN }}
