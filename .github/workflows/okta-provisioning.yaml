@@ -51,4 +51,4 @@ jobs:
         run: |
           cnspec version
           cnspec status
-          DEBUG=1 cnspec scan okta --organization dev-81307026.okta.com --token ${{ secrets.OKTA_API_TOKEN }}
+          cnspec scan docker image ubuntu:latest
