@@ -49,4 +49,4 @@ jobs:
         run: |
           cnspec version
           cnspec status
-          cnspec scan terraform terraform
+          cnspec scan local --asset-name "foo"
