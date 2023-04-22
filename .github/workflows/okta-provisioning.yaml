@@ -55,4 +55,4 @@ jobs:
         run: |
           cnspec version
           cnspec status
-          DEBUG=1 cnspec scan terraform ./terraform
+          cnspec scan terraform .
