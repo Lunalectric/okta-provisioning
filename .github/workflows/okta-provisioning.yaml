@@ -49,6 +49,4 @@ jobs:
         run: |
           cnspec version
           cnspec status
-          pwd
-          ls -l
-
+          cnspec scan terraform terraform
