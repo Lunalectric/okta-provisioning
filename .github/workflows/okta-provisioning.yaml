@@ -8,14 +8,13 @@ env:
     TF_VAR_org_name: ${{ secrets.OKTA_ORG_NAME }}
     MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
 
-defaults:
-    run:
-        working-directory: ./terraform
-
 jobs:
   terraform-pre-plan-validation:
     name: "Terraform validate (pre-plan)"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+          working-directory: ./terraform
     steps:
     - uses: 'actions/checkout@v3'
 
@@ -44,15 +43,15 @@ jobs:
   cnspec-scan-hcl:
     name: "Terraform scan (pre-plan)"
     runs-on: ubuntu-latest
-    container: mondoo/cnspec:latest
+    container: mondoo/cnspec:8
     needs: terraform-pre-plan-validation 
-    
+
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-            
+      - uses: 'actions/checkout@v3'
       - name: Scan Terraform HCL (pre-plan)
         run: |
           cnspec version
           cnspec status
-          cnspec scan terraform .
+          cnspec scan terraform ./terraform
+        env:
+          MONDOO_DETECT_CICD: false
