@@ -49,4 +49,6 @@ jobs:
         run: |
           cnspec version
           cnspec status
+          pwd
+          ls -l
 
