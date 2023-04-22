@@ -8,6 +8,10 @@ env:
     TF_VAR_org_name: ${{ secrets.OKTA_ORG_NAME }}
     MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
 
+defaults:
+    run:
+        working-directory: ./terraform
+
 jobs:
   terraform-pre-plan-validation:
     name: "Terraform validate (pre-plan)"
