@@ -37,3 +37,14 @@ jobs:
       id: validate
       run: terraform validate -no-color
 
+  cnspec-scan-hcl:
+    runs-on: ubuntu-latest
+    container: mondoo/cnspec:latest
+    
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+            
+      - name: Scan Terraform HCL (pre-plan)
+        run: cnspec scan terraform terraform --asset-name 
+

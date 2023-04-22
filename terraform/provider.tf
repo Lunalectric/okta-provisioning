@@ -1,4 +1,3 @@
-# 00puEC1BMoJ0IbJdEiPrPfNp3HC2Eimpgb8KWLLv0v
 terraform {
   required_providers {
     okta = {
