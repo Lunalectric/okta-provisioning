@@ -56,6 +56,7 @@ jobs:
           MONDOO_DETECT_CICD: false
 
   terraform-plan:
+    name: Generate Terraform Plan
     runs-on: ubuntu-latest
     container: hashicorp/terraform:1.4
     needs: cnspec-scan-terraform-hcl 
@@ -90,6 +91,7 @@ jobs:
         run: terraform -chdir="./terraform" show -json plan.out > terraform/plan.json
 
   post-plan-scan:
+    name: Scan Terraform (post-plan)
     needs: terraform-plan
     runs-on: ubuntu-latest
     container: mondoo/cnspec:latest
@@ -111,6 +113,7 @@ jobs:
           MONDOO_DETECT_CICD: false
 
   terraform-apply:
+    name: Terraform Apply 
     runs-on: ubuntu-latest
     container: hashicorp/terraform:1.4
     needs: post-plan-scan
@@ -132,6 +135,7 @@ jobs:
         run: terraform -chdir="./terraform" apply -auto-approve
 
   post-apply-scan:
+    name: Scan Okta Organization
     needs: terraform-apply
     runs-on: ubuntu-latest
     container: mondoo/cnspec:latest
