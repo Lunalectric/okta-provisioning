@@ -107,3 +107,5 @@ jobs:
         
       - name: Scan Terraform Plan
         run: cnspec scan terraform plan terraform/plan.json
+        env:
+          MONDOO_DETECT_CICD: false
