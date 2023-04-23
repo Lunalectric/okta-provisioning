@@ -89,7 +89,7 @@ jobs:
       - name: Terraform show
         run: terraform -chdir="./terraform" show -json plan.out > terraform/plan.json
 
-  cnspec-scan-plan:
+  post-plan-scan:
     needs: terraform-plan
     runs-on: ubuntu-latest
     container: mondoo/cnspec:latest
@@ -107,5 +107,36 @@ jobs:
         
       - name: Scan Terraform Plan
         run: cnspec scan terraform plan terraform/plan.json
+        env:
+          MONDOO_DETECT_CICD: false
+
+  terraform-apply:
+    runs-on: ubuntu-latest
+    container: hashicorp/terraform:1.4
+    needs: post-plan-scan
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - id: 'google-cloud-auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      - name: Terraform plan
+        run: terraform -chdir="./terraform" apply -auto-approve
+
+  post-apply-scan:
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+    container: mondoo/cnspec:latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        
+      - name: Scan Terraform Plan
+        run: cnspec scan okta --organization dev-81307026.okta.com --token ${{ secrets.OKTA_API_TOKEN }}
         env:
           MONDOO_DETECT_CICD: false
