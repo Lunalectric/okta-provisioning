@@ -1,6 +1,7 @@
 name: Okta Provisioning
 on:
   push:
+  workflow_dispatch:
 
 env:
     TF_VAR_api_token: ${{ secrets.OKTA_API_TOKEN }}
@@ -10,7 +11,7 @@ env:
 
 jobs:
   terraform-pre-plan-validation:
-    name: "Terraform validate (pre-plan)"
+    name: "Validate Terraform HCL (pre-plan)"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,31 +55,48 @@ jobs:
         env:
           MONDOO_DETECT_CICD: false
 
-  cnspec-scan-terraform-plan:
-    name: "Scan Terraform plan (post-plan)"
+  terraform-plan:
     runs-on: ubuntu-latest
-    container: mondoo/cnspec:8
-    needs: terraform-pre-plan-validation 
+    container: hashicorp/terraform:1.4
 
     steps:
-      - uses: 'actions/checkout@v3'
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
-      - uses: hashicorp/setup-terraform@v2
+      - name: Mitigate that fancy action/cache@v3 does not work with busybox tar on alpine
+        run: apk add --no-cache tar
+
+      - name: Use cache to share files between jobs
+        uses: actions/cache@v3
+        id: terraform-plan
         with:
-          terraform_wrapper: false
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/terraform/**') }}
+          path: terraform/plan.json          
 
-      - name: Terraform Init
-        id: init
-        run: terraform init
+      - name: Terraform init
+        run: terraform -chdir="./terraform" init
 
-      - name: Generate Terraform plan
-        id: generate-tfplan
-        run: |
-          terraform plan -out tfplan
-          terraform show -json tfplan > tfplan.json
+      - name: Terraform plan
+        run: terraform -chdir="./terraform" plan -out=plan.out
 
-      - name: Scan Terraform Plan (post-plan)
-        run: |
-          cnspec scan terraform plan ./terraform/tfplan.json
-        env:
-          MONDOO_DETECT_CICD: false
+      - name: Terraform show
+        run: terraform -chdir="./terraform" show -json plan.out > terraform/plan.json
+
+  cnspec-scan-plan:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    container: mondoo/cnspec:latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Use cache to share files between jobs
+        uses: actions/cache@v3
+        id: terraform-plan
+        with:
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/terraform/**') }}
+          path: terraform/plan.json
+        
+      - name: Scan Terraform Plan
+        run: cnspec scan terraform plan terraform/plan.json
