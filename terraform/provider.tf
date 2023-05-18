@@ -7,7 +7,7 @@ terraform {
   }
   backend "gcs" {
     bucket = "luna-terraform-backend"
-    prefix = "hashitalks-secure"
+    prefix = "luna-okta-provisioning"
   }
 }
 
