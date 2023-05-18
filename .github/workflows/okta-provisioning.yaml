@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
 
 env:
+    MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
     TF_VAR_api_token: ${{ secrets.OKTA_API_TOKEN }}
     TF_VAR_base_url: ${{ vars.OKTA_BASE_URL }}
     TF_VAR_org_name: ${{ vars.OKTA_ORG_NAME }}
