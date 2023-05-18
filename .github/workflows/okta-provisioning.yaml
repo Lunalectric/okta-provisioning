@@ -5,14 +5,16 @@ on:
 
 env:
     TF_VAR_api_token: ${{ secrets.OKTA_API_TOKEN }}
-    TF_VAR_base_url: ${{ secrets.OKTA_BASE_URL }}
-    TF_VAR_org_name: ${{ secrets.OKTA_ORG_NAME }}
-    MONDOO_CONFIG_BASE64: ${{ secrets.MONDOO_CONFIG_BASE64 }}
+    TF_VAR_base_url: ${{ vars.OKTA_BASE_URL }}
+    TF_VAR_org_name: ${{ vars.OKTA_ORG_NAME }}
 
 jobs:
   terraform-pre-plan-validation:
-    name: "Validate Terraform HCL (pre-plan)"
+    name: "Terraform Validate"
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
     defaults:
       run:
           working-directory: ./terraform
@@ -42,18 +44,23 @@ jobs:
       run: terraform validate -no-color
 
   cnspec-scan-terraform-hcl:
-    name: "Scan Terraform HCL (pre-plan)"
+    name: "Scan Terraform (pre-plan)"
     runs-on: ubuntu-latest
     container: mondoo/cnspec:8
     needs: terraform-pre-plan-validation 
+    permissions:
+      pull-requests: write
+      contents: write
 
     steps:
       - uses: 'actions/checkout@v3'
-      - name: Scan Terraform HCL (pre-plan)
+
+      - name: Scan ${{ vars.OKTA_ORG_NAME }} Terraform HCL (pre-plan)
         run: |
-          cnspec scan terraform ./terraform --asset-name terraform-hcl-luna-org.okta.com
-        env:
-          MONDOO_DETECT_CICD: false
+          echo "### ${{ vars.OKTA_ORG_NAME }} Terraform pre-plan security scan :shield:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cnspec scan terraform ./terraform --asset-name ${{ vars.OKTA_ORG_NAME }}-terraform-hcl -f policies/okta-security-healthinsights.mql.yaml >> $GITHUB_STEP_SUMMARY
+          echo "CNSPEC_PRE_SCAN=$GITHUB_STEP_SUMMARY" >> $GITHUB_ENV
 
   terraform-plan:
     name: Generate Terraform Plan
@@ -107,8 +114,12 @@ jobs:
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/terraform/**') }}
           path: terraform/plan.json
         
-      - name: Scan Terraform Plan
-        run: cnspec scan terraform plan terraform/plan.json --asset-name terraform-plan-luna-org.okta.com
+      - name: Scan ${{ vars.OKTA_ORG_NAME }} Terraform Plan (post-plan)
+        run: |
+          echo "### ${{ vars.OKTA_ORG_NAME }} Terraform post-plan security scan :shield:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cnspec scan terraform plan ./terraform/plan.json --asset-name ${{ vars.OKTA_ORG_NAME }}-terraform-plan -f policies/okta-security-healthinsights.mql.yaml >> $GITHUB_STEP_SUMMARY
+          echo "CNSPEC_PRE_SCAN=$GITHUB_STEP_SUMMARY" >> $GITHUB_ENV
         env:
           MONDOO_DETECT_CICD: false
 
@@ -135,7 +146,7 @@ jobs:
         run: terraform -chdir="./terraform" apply -auto-approve
 
   post-apply-scan:
-    name: Scan Okta Organization
+    name: Scan Okta Org (Post-Apply)
     needs: terraform-apply
     runs-on: ubuntu-latest
     container: mondoo/cnspec:latest
@@ -144,7 +155,9 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
         
-      - name: Scan Terraform Plan
-        run: cnspec scan okta --organization dev-81307026.okta.com --token ${{ secrets.OKTA_API_TOKEN }} --asset-name luna-org.okta.com
-        env:
-          MONDOO_DETECT_CICD: false
+      - name: Scan ${{ vars.OKTA_ORG_NAME }}.okta.com 
+        run: |
+          echo "### ${{ vars.OKTA_ORG_NAME }}.okta.com security scan (post-apply) :shield:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cnspec scan okta --organization ${{ vars.OKTA_ORG_NAME }}.okta.com --token ${{ secrets.OKTA_API_TOKEN }} --asset-name ${{ vars.OKTA_ORG_NAME }}.okta.com -f policies/okta-security-healthinsights.mql.yaml >> $GITHUB_STEP_SUMMARY
+          echo "CNSPEC_PRE_SCAN=$GITHUB_STEP_SUMMARY" >> $GITHUB_ENV
